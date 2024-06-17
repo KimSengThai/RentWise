@@ -1,1 +1,6 @@
 alembic/
+migration/
+Pipfile.lock
+*.db
+*.sqlite
+db.sqlite3
