@@ -9,8 +9,11 @@ resulting in reduction in manual data processing and facilitating smoother tenan
 ## You need:
 
 Python
+
 Pipenv
+
 SQLAlchemy
+
 Alembic
 
 ## Installation
