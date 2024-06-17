@@ -15,7 +15,7 @@ Alembic
 
 ## Installation
 
-To install and run this project - install dependencies and then CD <Root of project directory folder>:
+To install and run this project - install dependencies and then CD to Root of "project directory folder":
 
 $ pipenv install
 
