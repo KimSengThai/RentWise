@@ -1,6 +1,7 @@
 alembic/
-migration/
+migrations/
 Pipfile.lock
+alembic.ini
 *.db
 *.sqlite
 db.sqlite3
