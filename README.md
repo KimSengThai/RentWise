@@ -1,1 +1,1 @@
-# RentWise_Python_CLI
+# RentWise (Python and SQLite CLI)
