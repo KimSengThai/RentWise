@@ -6,7 +6,7 @@ techniques, which improved code maintainability.
 An efficient backend system for property data management and rental transactions,
 resulting in reduction in manual data processing and facilitating smoother tenant tracking.
 
-## You need:
+## You need the following dependencies:
 
 Python
 
@@ -15,6 +15,8 @@ Pipenv
 SQLAlchemy
 
 Alembic
+
+sqlite3
 
 ## Installation
 
@@ -26,8 +28,8 @@ $ pipenv shell
 
 ### Generate Initial Seed
 
-$ python3 lib/seed.py
+$ python lib/seed.py
 
 ### Run the commandline
 
-$ python3 lib/run.py
+$ python lib/run.py
