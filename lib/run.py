@@ -53,7 +53,6 @@ def handle_yes_no(message):
 
 # Displays a list of properties and allows the user to view more details or go back to the main menu.
 def display_properties(properties, heading_msg, my_user_id=None):
-    
     # This is because applicant list is different
     if heading_msg == "YOUR APPLCATION LIST" and len(properties) > 0:   
         applications = properties                            # Use application for list below, 1st loop
@@ -96,7 +95,10 @@ def display_properties(properties, heading_msg, my_user_id=None):
                 print(f"{agent_prop.id} (Property ID): {agent_prop.type} at {agent_prop.location}, ${agent_prop.weekly_rent}/week")
         elif heading_msg == "ALL APPLICATIONS LIST" and len(properties) > 0:
             for app in properties:
-                print(f"{app.id} (Application ID): {app.applicant.name} at {app.property.location}, status: {app.status}")                                                
+                print(f"{app.id} (Application ID): {app.applicant.name} at {app.property.location}, status: {app.status}") 
+        elif heading_msg == "PROPERTIES TO ENLIST" and len(properties) > 0:
+            for agent_prop in properties:
+                print(f"{agent_prop.id} (Property ID): {agent_prop.type} at {agent_prop.location}, ${agent_prop.weekly_rent}/week")                                                              
         else:
             print("No properties exist...")
         print('-' * 50)
@@ -123,6 +125,28 @@ def display_properties(properties, heading_msg, my_user_id=None):
             else:
                 clear()
                 loop = False
+                return False
+        elif heading_msg == "PROPERTIES TO ENLIST" and len(properties) > 0:
+            print("\nPlease enter the property ID to enlist for (type 'back' to go back):")
+            id_input = input()
+            clear()
+            if id_input != 'back':
+                try:
+                    print(Fore.GREEN + f"Enlisting For Property ID: {id_input} has been successful" + Style.RESET_ALL)
+                    property_id_input = int(id_input)  # Use property_id_input
+                    selected_property = [p for p in properties if p.id == property_id_input]
+                    if selected_property:
+                        property = selected_property[0]
+                        applicants_properties = AgentProperty(property_id=property.id, agent_id=my_user_id)
+                        session.add(applicants_properties)
+                        session.commit()
+                        print('-' * 50)
+                    else:
+                        print("Please select a relevant property ID!")
+                except ValueError:
+                    print("Invalid input. Please enter a valid property ID.")
+            else:
+                clear()
                 return False
         elif heading_msg == "ALL APPLICATIONS LIST" and len(properties) > 0:
             print("\nPlease enter the application ID to edit the status (type 'back' to go back):")
@@ -180,7 +204,7 @@ def display_properties(properties, heading_msg, my_user_id=None):
                             applications = session.query(Application).filter(
                             Application.property_id == property.id).all()
                             print(Fore.CYAN + f"Owner Name:"  + Style.RESET_ALL)
-                            print({owner.name})
+                            print(owner.name)
                             print(Fore.CYAN + f"List of existing applications:"  + Style.RESET_ALL)
                             for application in applications:
                                 applicant = session.query(Applicant).filter(Applicant.id == application.applicant_id).first()
@@ -341,8 +365,9 @@ def add_property(username):
             session.add(new_owner)
             session.commit()
             owner = new_owner
-            print("\nNew owner registered successfully!")
+            print(Fore.GREEN + "\nNew owner registered successfully!"  + Style.RESET_ALL)
         else:
+            print(Fore.RED + "Adding Property Has Been Cancel!" + Style.RESET_ALL)
             return False
     else:
         print(f"Owner {owner_name} found, proceeding with property registration.")
@@ -407,14 +432,23 @@ def list_agent_property(username):
     else:
         print(f"{username} has no property listings.")
 
+def enlist(username):
+    my_agent = session.query(Agent).filter(Agent.name == username).first()
+    associated_property_ids = session.query(AgentProperty.property_id).filter(AgentProperty.agent_id == my_agent.id).all()
+    associated_property_ids = [pid[0] for pid in associated_property_ids] 
+    properties_not_with_agent = session.query(Property).filter(Property.id.notin_(associated_property_ids)).all()
+    if properties_not_with_agent:
+        clear()
+        display_properties(properties_not_with_agent, "PROPERTIES TO ENLIST", my_agent.id)
+    else:
+        print(f"{logged_user.name} has no property listings.")   
 
 # Main Menu selection
 def main_menu():
     print("\nType the following:")
-    print("\nAgent       - If you're an agent (1)")
-    print("Applicant   - If you're an applicant looking for renting (2)")
-    print("Owner       - If you're an owner (3)")
-    print('Quit        - Terminate The Program (4)')
+    print("\nAgent or 1         - If you're an agent")
+    print("Applicant or 2     - If you're an applicant looking for renting")
+    print('Quit or 3          - Terminate The Program')
     return input("\nEnter your choice: ")
 
 # Greeding the user and 
@@ -447,16 +481,6 @@ def login(username, role):
             user = Applicant(name=username, phone_number=phone_number)
             session.add(user)
             session.commit()
-    elif role == 'owner':
-        while True:
-            user = session.query(Owner).filter(Owner.name == username).first()
-            if not user:
-                print(Fore.RED + "Owner name not found, please try again or type 'back' to go back" + Style.RESET_ALL)
-                username = input("Please enter your fullname (CASE SENSITIVE): ")
-                if username.lower() == 'back':
-                    return False
-            else:
-                break
     global logged_user
     logged_user = user          
 
@@ -464,45 +488,32 @@ def applicant_menu():
     heading("MAIN MENU")
     print(f"Hi {logged_user.name} 👋")
     print("\nType the following:")
-    print("\nMyApp     - List of your existing applications (1)")
-    print("NewApp    - Apply for a new applications (2)") 
-    print("All       - Display all properties (3)")
-    print("House     - List of houses (4)")
-    print("Apartment - List of apartments (5)")
-    print("Bedroom   - Search properties by bedroom number (6)")
-    print("Bathroom  - Search properties by bathroom number (7)")
-    print("Rent      - Search properties by weekly rent (8)")
-    print('Back      - Go back (9)')
-    return input("\nPlease enter you menu choice: ")
-
-def owner_menu():
-    heading("MAIN MENU")
-    print(f"Hi {logged_user.name} 👋")
-    print("\nType the following:")
-    print("\nMyProp    - List of your existing properties (1)") 
-    print("All       - Display all properties (2)")
-    print("House     - List of houses (3)")
-    print("Apartment - List of apartments (4)")
-    print("Bedroom   - Search properties by bedroom number (5)")
-    print("Bathroom  - Search properties by bathroom number (6)")
-    print("Rent      - Search properties by weekly rent (7)")
-    print('Back      - Go back (8)')
+    print("\nMyApp or 1     - List of your existing applications")
+    print("NewApp or 2    - Apply for a new applications") 
+    print("All or 3       - Display all properties")
+    print("House or 4     - List of houses")
+    print("Apartment or 5 - List of apartments")
+    print("Bedroom or 6   - Search properties by bedroom number")
+    print("Bathroom or 7  - Search properties by bathroom number")
+    print("Rent or 8      - Search properties by weekly rent")
+    print('Back or 9      - Go back')
     return input("\nPlease enter you menu choice: ")
 
 def agent_menu():
     heading("MAIN MENU")
     print(f"Hi {logged_user.name} 👋")
     print("\nType the following:")
-    print("\nAdd       - Add New Properties (1)")
-    print("Edit      - Edit Existing Property Applications Status (2)")
-    print("MyItem    - Your properties listing (3)")             
-    print("All       - Display all properties (4)")
-    print("House     - List of houses (5)")
-    print("Apartment - List of apartments (6)")
-    print("Bedroom   - Search properties by bedroom number (7)")
-    print("Bathroom  - Search properties by bathroom number (8)")
-    print("Rent      - Search properties by weekly rent (9)")
-    print('Back      - Go back (10)')
+    print("\nAdd or 1       - Add New Properties")
+    print("Edit or 2      - Edit Existing Property Applications Status")
+    print("MyItem or 3    - Your properties listing")
+    print("Enlist or 4    - Enlist to existing properties")             
+    print("All or 5       - Display all properties")
+    print("House or 6     - List of houses")
+    print("Apartment or 7 - List of apartments")
+    print("Bedroom or 8   - Search properties by bedroom number")
+    print("Bathroom or 9  - Search properties by bathroom number")
+    print("Rent or 10     - Search properties by weekly rent")
+    print('Back or 11     - Go back')
     return input("\nPlease enter you menu choice: ")
 
 def agent():
@@ -524,25 +535,28 @@ def agent():
         elif choice.lower()  == 'myitem' or choice == '3':
             clear()
             list_agent_property(logged_user.name)
-        elif choice.lower()  == 'all' or choice == '4':
+        elif choice.lower()  == 'enlist' or choice == '4':
+            clear()
+            enlist(logged_user.name)            
+        elif choice.lower()  == 'all' or choice == '5':
             clear()
             find_all_proeprties(logged_user.name)
-        elif choice.lower()  == 'house' or choice == '5':
+        elif choice.lower()  == 'house' or choice == '6':
             clear()
             find_house(logged_user.name)
-        elif choice.lower()  == 'apartment' or choice == '6':
+        elif choice.lower()  == 'apartment' or choice == '7':
             clear()
             find_apartment(logged_user.name)
-        elif choice.lower()  == 'bedroom' or choice == '7':
+        elif choice.lower()  == 'bedroom' or choice == '8':
             clear()
             find_bedroom(logged_user.name)
-        elif choice.lower()  == 'bathroom' or choice == '8':
+        elif choice.lower()  == 'bathroom' or choice == '9':
             clear()
             find_bathroom(logged_user.name)
-        elif choice.lower()  == 'rent' or choice == '9':
+        elif choice.lower()  == 'rent' or choice == '10':
             clear()
             find_rent(logged_user.name)                            
-        elif choice.lower() == 'exit' or choice.lower() == 'quit' or choice.lower() == 'back' or choice == '10':
+        elif choice.lower() == 'exit' or choice.lower() == 'quit' or choice.lower() == 'back' or choice == '11':
             innerloop = False
         else:
             print("Invalid input. Please try again!")
@@ -588,44 +602,6 @@ def applicant():
             print("Invalid input. Please try again!")
     print("Thank you for using RentWise. Goodbye!")
 
-def owner():
-    clear()
-    sub_heading("Owner Login")
-    username = input("\nPlease enter your fullname (CASE SENSITIVE): ")
-    if login(username, 'owner') == False:
-        return False
-    clear()
-    innerloop = True
-    while innerloop:
-        choice = owner_menu()
-        if choice.lower() == 'myprop' or choice == '1':
-            clear()
-            owner_existing_property(logged_user.name)
-        elif choice.lower()  == 'all' or choice == '2':
-            clear()
-            find_all_proeprties()
-        elif choice.lower()  == 'house' or choice == '3':
-            clear()
-            find_house()
-        elif choice.lower()  == 'apartment' or choice == '4':
-            clear()
-            find_apartment()
-        elif choice.lower()  == 'bedroom' or choice == '5':
-            clear()
-            find_bedroom()
-        elif choice.lower()  == 'bathroom' or choice == '6':
-            clear()
-            find_bathroom()
-        elif choice.lower()  == 'rent' or choice == '7':
-            clear()
-            find_rent()                            
-        elif choice.lower() == 'exit' or choice.lower() == 'quit' or choice.lower() == 'back' or choice == '8':
-            innerloop = False
-        else:
-            print("Invalid input. Please try again!")
-    print("Thank you for using RentWise. Goodbye!")
-
-
 # Starts the application and displays the main menu in a loop.
 def start():
     loop = True
@@ -638,10 +614,7 @@ def start():
         elif choice == 'applicant' or choice == '2':
             applicant()
             clear()
-        elif choice == 'owner' or choice == '3':
-            owner()
-            clear()
-        elif choice == 'quit' or choice.lower() == 'exit' or choice.lower() == 'back'  or choice == '4':
+        elif choice == 'quit' or choice.lower() == 'exit' or choice.lower() == 'back'  or choice == '3':
             loop = False
         else:
             print("Invalid input. Please try again!")
