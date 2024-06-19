@@ -12,10 +12,6 @@ Python
 
 Pipenv
 
-SQLAlchemy
-
-Alembic
-
 sqlite3
 
 ## Installation
